@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Crear Solicitud</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="auth.js"></script>
+</head>
+
+<body onload="validarSesion(); cargarDatosIniciales();">
+
+<header class="topbar">
+    <div>
+        <h1>Gestión Audiovisual</h1>
+        <p>Plataforma de préstamos</p>
+    </div>
+
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="recursos.html">Recursos</a>
+        <a href="solicitud.html">Solicitudes</a>
+        <a href="historial.html">Historial</a>
+        <a href="admin.html">Admin</a>
+        <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
+    </nav>
+</header>
+
+<main class="container">
+
+    <div class="form-card">
+
+        <div class="page-title">
+            <h2>Nueva Solicitud de Préstamo</h2>
+            <p>Complete las fechas para registrar la solicitud</p>
+        </div>
+
+        <!-- CAMPOS OCULTOS -->
+        <input type="hidden" id="usuario">
+        <input type="hidden" id="id_recurso">
+
+        <div class="form-grid">
+
+            <div class="form-group">
+                <label>Usuario</label>
+                <input type="text" id="nombre_usuario" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Recurso seleccionado</label>
+                <input type="text" id="nombre_recurso" disabled>
+            </div>
+
+            <div class="form-group">
+                <label>Fecha Inicio</label>
+                <input type="date" id="inicio">
+            </div>
+
+            <div class="form-group">
+                <label>Fecha Fin</label>
+                <input type="date" id="fin">
+            </div>
+
+        </div>
+
+        <button class="btn-primary" onclick="crearSolicitud()">
+            Crear Solicitud
+        </button>
+
+        <p id="mensaje" class="mensaje"></p>
+
+    </div>
+
+</main>
+
+<script>
+
+async function cargarDatosIniciales() {
+
+    // USUARIO LOGUEADO
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+    if (usuario) {
+        document.getElementById("usuario").value = usuario.id_usuario;
+        document.getElementById("nombre_usuario").value = usuario.nombre;
+    }
+
+    // ID DEL RECURSO
+    const parametros = new URLSearchParams(window.location.search);
+    const idRecurso = parametros.get("id_recurso");
+
+    if (!idRecurso) {
+        alert("No se seleccionó ningún recurso.");
+        window.location.href = "recursos.html";
+        return;
+    }
+
+    document.getElementById("id_recurso").value = idRecurso;
+
+    // BUSCAR NOMBRE DEL RECURSO
+    try {
+
+        const respuesta = await fetch("http://localhost:3000/recursos");
+        const recursos = await respuesta.json();
+
+        const recurso = recursos.find(r => r.id_recurso == idRecurso);
+
+        if (recurso) {
+            document.getElementById("nombre_recurso").value = recurso.nombre;
+        }
+
+    } catch (error) {
+        console.error("Error al cargar recurso:", error);
+    }
+}
+
+function crearSolicitud() {
+
+    const id_usuario = document.getElementById("usuario").value;
+    const id_recurso = document.getElementById("id_recurso").value;
+    const fecha_inicio = document.getElementById("inicio").value;
+    const fecha_fin = document.getElementById("fin").value;
+    const mensaje = document.getElementById("mensaje");
+
+    if (!fecha_inicio || !fecha_fin) {
+
+        mensaje.innerText = "Debe completar las fechas.";
+        mensaje.className = "mensaje error";
+        return;
+    }
+
+    fetch("http://localhost:3000/solicitud", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            id_usuario,
+            id_recurso,
+            fecha_inicio,
+            fecha_fin
+        })
+    })
+
+    .then(res => res.json())
+
+    .then(data => {
+
+        if (data.error) {
+
+            mensaje.innerText = data.error;
+            mensaje.className = "mensaje error";
+            return;
+        }
+
+        mensaje.innerText = data.mensaje;
+        mensaje.className = "mensaje exito";
+
+        setTimeout(() => {
+            window.location.href = "recursos.html";
+        }, 1500);
+    })
+
+    .catch(error => {
+
+        console.error(error);
+
+        mensaje.innerText = "Error de conexión con el servidor.";
+        mensaje.className = "mensaje error";
+    });
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+INSTRUCCIONES DE INSTALACIÓN
+
+1. Abrir una terminal en la carpeta SistemaWeb.
+
+2. Ejecutar el siguiente comando:
+
+npm install
+
+3. Ejecutar el servidor con:
+
+node server.js
+
+4. Abrir el archivo index.html en el navegador.
+
+5. Credenciales de prueba:
+
+Administrador
+Correo: admin@demo.cl
+Contraseña: 123456
+
+Usuario
+Correo: usuario@demo.cl
+Contraseña: 123456
