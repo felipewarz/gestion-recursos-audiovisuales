@@ -2,32 +2,59 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Usuario</title>
+    <title>Registro | Gestión Audiovisual</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body>
 
-<h1>Registro de Usuario</h1>
+<body class="login-body">
 
-<nav>
-    <a href="index.html">Volver al login</a>
-</nav>
+    <div class="login-container">
+        <div class="login-card">
+            <h1>Crear cuenta</h1>
+            <p class="login-subtitle">Registro de usuario solicitante</p>
 
-<input type="text" id="nombre" placeholder="Nombre"><br><br>
-<input type="email" id="correo" placeholder="Correo"><br><br>
-<input type="password" id="contrasena" placeholder="Contraseña"><br><br>
+            <div class="form-group">
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" placeholder="Ingrese su nombre">
+            </div>
 
-<button onclick="registrarUsuario()">Registrar</button>
+            <div class="form-group">
+                <label for="correo">Correo electrónico</label>
+                <input type="email" id="correo" placeholder="Ingrese su correo">
+            </div>
 
-<p id="mensaje"></p>
+            <div class="form-group">
+                <label for="contrasena">Contraseña</label>
+                <input type="password" id="contrasena" placeholder="Ingrese su contraseña">
+            </div>
+
+            <button onclick="registrarUsuario()" class="btn-primary">
+                Registrarse
+            </button>
+
+            <p id="resultado" class="mensaje"></p>
+
+            <p class="login-link">
+                ¿Ya tienes cuenta?
+                <a href="index.html">Iniciar sesión</a>
+            </p>
+        </div>
+    </div>
 
 <script>
 function registrarUsuario() {
     const nombre = document.getElementById("nombre").value;
     const correo = document.getElementById("correo").value;
     const contrasena = document.getElementById("contrasena").value;
+    const resultado = document.getElementById("resultado");
 
-    fetch("/registro", {
+    if (!nombre || !correo || !contrasena) {
+        resultado.innerText = "Debe completar todos los campos.";
+        resultado.className = "mensaje error";
+        return;
+    }
+
+    fetch("http://localhost:3000/registro", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -40,13 +67,23 @@ function registrarUsuario() {
     })
     .then(res => res.json())
     .then(data => {
-        document.getElementById("mensaje").innerText =
-            data.mensaje || data.error || "Operación realizada";
+        if (data.error) {
+            resultado.innerText = data.error;
+            resultado.className = "mensaje error";
+            return;
+        }
+
+        resultado.innerText = data.mensaje + ". Redirigiendo al login...";
+        resultado.className = "mensaje exito";
+
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1500);
     })
     .catch(error => {
         console.error(error);
-        document.getElementById("mensaje").innerText =
-            "Error al registrar usuario";
+        resultado.innerText = "Error de conexión con el servidor.";
+        resultado.className = "mensaje error";
     });
 }
 </script>

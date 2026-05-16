@@ -4,57 +4,236 @@
     <meta charset="UTF-8">
     <title>Recursos Audiovisuales</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="auth.js"></script>
 </head>
-<body>
 
-<h1>Recursos audiovisuales disponibles</h1>
+<body onload="validarSesion(); cargarNotificacionesUsuario(); cargarRecursos();">
 
-<nav>
-    <a href="dashboard.html">Dashboard</a>
-    <a href="solicitud.html">Crear solicitud</a>
-    <a href="historial.html">Historial</a>
-    <a href="index.html">Cerrar sesión</a>
-</nav>
+<header class="topbar">
+    <div>
+        <h1>Gestión Audiovisual</h1>
+        <p>Plataforma de préstamos de recursos</p>
+    </div>
 
-<button onclick="cargarRecursos()">Cargar recursos</button>
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="recursos.html">Recursos</a>
+        <a href="solicitud.html">Solicitudes</a>
+        <a href="historial.html">Historial</a>
+        <a href="admin.html">Admin</a>
+        <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
+    </nav>
+</header>
 
-<table border="1" cellpadding="8">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Recurso</th>
-            <th>Descripción</th>
-            <th>Categoría</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody id="tablaRecursos"></tbody>
-</table>
+<main class="container">
+
+    <div id="notificacionUsuario" class="notificacion-usuario" style="display:none;"></div>
+
+    <div class="page-header">
+        <div>
+            <h2>Recursos audiovisuales</h2>
+            <p>Listado de recursos disponibles en el sistema</p>
+        </div>
+
+        <button class="btn-primary" onclick="cargarRecursos()">
+            Actualizar listado
+        </button>
+    </div>
+
+    <div class="search-card">
+        <input 
+            type="text" 
+            id="buscador" 
+            placeholder="Buscar por recurso, descripción, categoría o estado..."
+            onkeyup="filtrarRecursos()"
+        >
+    </div>
+
+    <div class="table-container">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Recurso</th>
+                    <th>Descripción</th>
+                    <th>Categoría</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+
+            <tbody id="tablaRecursos"></tbody>
+        </table>
+    </div>
+
+</main>
 
 <script>
-function cargarRecursos() {
-    fetch("/recursos")
+let recursosGlobales = [];
+
+function obtenerCategoria(idCategoria) {
+    switch(Number(idCategoria)) {
+        case 1:
+            return "Proyección";
+        case 2:
+            return "Audio";
+        case 3:
+            return "Video";
+        case 4:
+            return "Computación";
+        default:
+            return "General";
+    }
+}
+
+function obtenerEstadoTexto(idEstado) {
+    if (idEstado == 1) {
+        return "Disponible";
+    }
+
+    return "No disponible";
+}
+
+function irSolicitud(idRecurso) {
+    window.location.href = `solicitud.html?id_recurso=${idRecurso}`;
+}
+
+function cargarNotificacionesUsuario() {
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const contenedor = document.getElementById("notificacionUsuario");
+
+    if (!usuario || !usuario.id_usuario) {
+        return;
+    }
+
+    // Solo mostrar notificaciones a usuarios normales
+    if (usuario.id_rol == 1) {
+        contenedor.style.display = "none";
+        return;
+    }
+
+    fetch("http://localhost:3000/solicitudes")
         .then(res => res.json())
         .then(data => {
-            const tabla = document.getElementById("tablaRecursos");
-            tabla.innerHTML = "";
+            const solicitudesUsuario = data.filter(solicitud => 
+                solicitud.id_usuario == usuario.id_usuario &&
+                (solicitud.id_estado_solicitud == 2 || solicitud.id_estado_solicitud == 3)
+            );
 
-            data.forEach(recurso => {
-                tabla.innerHTML += `
-                    <tr>
-                        <td>${recurso.id_recurso}</td>
-                        <td>${recurso.nombre}</td>
-                        <td>${recurso.descripcion}</td>
-                        <td>${recurso.id_categoria}</td>
-                        <td>${recurso.id_estado}</td>
-                    </tr>
+            if (solicitudesUsuario.length === 0) {
+                contenedor.style.display = "none";
+                return;
+            }
+
+            const ultimaSolicitud = solicitudesUsuario[0];
+
+            if (ultimaSolicitud.id_estado_solicitud == 2) {
+                contenedor.className = "notificacion-usuario notificacion-aprobada";
+                contenedor.innerHTML = `
+                    ✅ Su solicitud del recurso 
+                    <strong>${ultimaSolicitud.nombre_recurso || "seleccionado"}</strong> 
+                    fue aprobada.
+                    <a href="historial.html">Ver historial</a>
                 `;
-            });
+            }
+
+            if (ultimaSolicitud.id_estado_solicitud == 3) {
+                contenedor.className = "notificacion-usuario notificacion-rechazada";
+                contenedor.innerHTML = `
+                    ❌ Su solicitud del recurso 
+                    <strong>${ultimaSolicitud.nombre_recurso || "seleccionado"}</strong> 
+                    fue rechazada.
+                    <a href="historial.html">Ver historial</a>
+                `;
+            }
+
+            contenedor.style.display = "block";
         })
         .catch(error => {
-            console.error(error);
-            alert("Error al cargar recursos");
+            console.error("Error al cargar notificaciones:", error);
         });
+}
+
+function cargarRecursos() {
+    fetch("http://localhost:3000/recursos")
+        .then(res => res.json())
+        .then(data => {
+            recursosGlobales = data;
+            mostrarRecursos(data);
+        })
+        .catch(error => {
+            console.error("Error al cargar recursos:", error);
+        });
+}
+
+function mostrarRecursos(data) {
+    const tabla = document.getElementById("tablaRecursos");
+    tabla.innerHTML = "";
+
+    if (data.length === 0) {
+        tabla.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center;">
+                    No se encontraron recursos
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    data.forEach(recurso => {
+        const categoria = obtenerCategoria(recurso.id_categoria);
+
+        let estadoTexto = "";
+        let botonAccion = "";
+
+        if (recurso.id_estado == 1) {
+            estadoTexto = '<span class="estado disponible">Disponible</span>';
+
+            botonAccion = `
+                <button class="btn-small" onclick="irSolicitud(${recurso.id_recurso})">
+                    Solicitar
+                </button>
+            `;
+        } else {
+            estadoTexto = '<span class="estado prestado">No disponible</span>';
+
+            botonAccion = `
+                <button class="btn-disabled" disabled>
+                    No disponible
+                </button>
+            `;
+        }
+
+        tabla.innerHTML += `
+            <tr>
+                <td>${recurso.id_recurso}</td>
+                <td><strong>${recurso.nombre}</strong></td>
+                <td>${recurso.descripcion}</td>
+                <td>${categoria}</td>
+                <td>${estadoTexto}</td>
+                <td>${botonAccion}</td>
+            </tr>
+        `;
+    });
+}
+
+function filtrarRecursos() {
+    const texto = document.getElementById("buscador").value.toLowerCase();
+
+    const filtrados = recursosGlobales.filter(recurso => {
+        const categoria = obtenerCategoria(recurso.id_categoria).toLowerCase();
+        const estado = obtenerEstadoTexto(recurso.id_estado).toLowerCase();
+
+        return (
+            recurso.nombre.toLowerCase().includes(texto) ||
+            recurso.descripcion.toLowerCase().includes(texto) ||
+            categoria.includes(texto) ||
+            estado.includes(texto)
+        );
+    });
+
+    mostrarRecursos(filtrados);
 }
 </script>
 

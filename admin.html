@@ -4,24 +4,81 @@
     <meta charset="UTF-8">
     <title>Panel Administrador</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="auth.js"></script>
 </head>
-<body>
 
-    <h1>Panel Administrador</h1>
+<body onload="validarAdmin(); cargarRecursosAdmin();">
+
+<header class="topbar">
+    <div>
+        <h1>Gestión Audiovisual</h1>
+        <p>Panel de administración</p>
+    </div>
 
     <nav>
         <a href="dashboard.html">Dashboard</a>
         <a href="recursos.html">Recursos</a>
+        <a href="solicitud.html">Solicitudes</a>
         <a href="historial.html">Historial</a>
-        <a href="index.html">Cerrar sesión</a>
+        <a href="admin.html">Admin</a>
+        <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
     </nav>
+</header>
 
-    <section>
-        <h2>Recursos audiovisuales</h2>
+<main class="container">
 
-        <button onclick="cargarRecursos()">Cargar recursos</button>
+    <div class="page-header">
+        <div>
+            <h2>Panel Administrador</h2>
+            <p>Gestión de recursos audiovisuales</p>
+        </div>
+    </div>
 
-        <table border="1" cellpadding="8">
+    <div class="form-card">
+        <div class="page-title">
+            <h2 id="tituloFormulario">Agregar recurso</h2>
+            <p>Complete los datos del recurso audiovisual</p>
+        </div>
+
+        <input type="hidden" id="id_recurso">
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Nombre del recurso</label>
+                <input type="text" id="nombre" placeholder="Ejemplo: Proyector Epson">
+            </div>
+
+            <div class="form-group">
+                <label>Descripción</label>
+                <input type="text" id="descripcion" placeholder="Descripción del recurso">
+            </div>
+
+            <div class="form-group">
+                <label>Categoría</label>
+                <select id="id_categoria">
+                    <option value="1">Proyección</option>
+                    <option value="2">Audio</option>
+                    <option value="3">Video</option>
+                    <option value="4">Computación</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn-primary" onclick="guardarRecurso()">
+            Guardar recurso
+        </button>
+
+        <button class="btn-secondary" onclick="limpiarFormulario()">
+            Cancelar
+        </button>
+
+        <p id="mensajeAdmin" class="mensaje"></p>
+    </div>
+
+    <br>
+
+    <div class="table-container">
+        <table class="modern-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -29,83 +86,219 @@
                     <th>Descripción</th>
                     <th>Categoría</th>
                     <th>Estado</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody id="tablaRecursos"></tbody>
+
+            <tbody id="tablaAdmin"></tbody>
         </table>
-    </section>
+    </div>
 
-    <section>
-        <h2>Registrar nuevo recurso</h2>
+</main>
 
-        <input type="text" id="nombre" placeholder="Nombre del recurso"><br><br>
-        <input type="text" id="descripcion" placeholder="Descripción"><br><br>
-        <input type="number" id="id_categoria" placeholder="ID Categoría"><br><br>
-        <input type="number" id="id_estado" placeholder="ID Estado"><br><br>
+<script>
+function obtenerCategoria(idCategoria) {
+    switch(Number(idCategoria)) {
+        case 1:
+            return "Proyección";
+        case 2:
+            return "Audio";
+        case 3:
+            return "Video";
+        case 4:
+            return "Computación";
+        default:
+            return "General";
+    }
+}
 
-        <button onclick="crearRecurso()">Guardar recurso</button>
+function obtenerEstado(idEstado) {
+    if (idEstado == 1) {
+        return '<span class="estado disponible">Disponible</span>';
+    }
 
-        <p id="mensaje"></p>
-    </section>
+    return '<span class="estado prestado">No disponible</span>';
+}
 
-    <script>
-        function cargarRecursos() {
-            fetch("/recursos")
-                .then(res => res.json())
-                .then(data => {
-                    const tabla = document.getElementById("tablaRecursos");
-                    tabla.innerHTML = "";
+function cargarRecursosAdmin() {
+    fetch("http://localhost:3000/recursos")
+        .then(res => res.json())
+        .then(data => {
+            const tabla = document.getElementById("tablaAdmin");
+            tabla.innerHTML = "";
 
-                    data.forEach(recurso => {
-                        tabla.innerHTML += `
-                            <tr>
-                                <td>${recurso.id_recurso}</td>
-                                <td>${recurso.nombre}</td>
-                                <td>${recurso.descripcion}</td>
-                                <td>${recurso.id_categoria}</td>
-                                <td>${recurso.id_estado}</td>
-                            </tr>
-                        `;
-                    });
-                })
-                .catch(error => {
-                    console.error("Error al cargar recursos:", error);
-                    alert("Error al cargar recursos");
-                });
-        }
+            if (data.length === 0) {
+                tabla.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align:center;">
+                            No existen recursos registrados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
 
-        function crearRecurso() {
-            const nombre = document.getElementById("nombre").value;
-            const descripcion = document.getElementById("descripcion").value;
-            const id_categoria = document.getElementById("id_categoria").value;
-            const id_estado = document.getElementById("id_estado").value;
+            data.forEach(recurso => {
+                let botonDevolver = "";
 
-            fetch("/recursos", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    nombre,
-                    descripcion,
-                    id_categoria,
-                    id_estado
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("mensaje").innerText =
-                    data.mensaje || data.error || "Operación realizada";
+                if (recurso.id_estado != 1) {
+                    botonDevolver = `
+                        <button class="btn-warning" onclick="devolverRecurso(${recurso.id_recurso})">
+                            Devolver
+                        </button>
+                    `;
+                }
 
-                cargarRecursos();
-            })
-            .catch(error => {
-                console.error("Error al guardar recurso:", error);
-                document.getElementById("mensaje").innerText =
-                    "Error al guardar recurso";
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${recurso.id_recurso}</td>
+                        <td><strong>${recurso.nombre}</strong></td>
+                        <td>${recurso.descripcion}</td>
+                        <td>${obtenerCategoria(recurso.id_categoria)}</td>
+                        <td>${obtenerEstado(recurso.id_estado)}</td>
+                        <td>
+                            <button class="btn-small" onclick="editarRecurso(
+                                ${recurso.id_recurso},
+                                '${recurso.nombre}',
+                                '${recurso.descripcion}',
+                                ${recurso.id_categoria}
+                            )">
+                                Editar
+                            </button>
+
+                            ${botonDevolver}
+
+                            <button class="btn-danger" onclick="eliminarRecurso(${recurso.id_recurso})">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
+        })
+        .catch(error => {
+            console.error("Error al cargar recursos:", error);
+        });
+}
+
+function guardarRecurso() {
+    const id_recurso = document.getElementById("id_recurso").value;
+    const nombre = document.getElementById("nombre").value;
+    const descripcion = document.getElementById("descripcion").value;
+    const id_categoria = document.getElementById("id_categoria").value;
+    const mensaje = document.getElementById("mensajeAdmin");
+
+    if (!nombre || !descripcion || !id_categoria) {
+        mensaje.innerText = "Debe completar todos los campos.";
+        mensaje.className = "mensaje error";
+        return;
+    }
+
+    const datos = {
+        nombre,
+        descripcion,
+        id_categoria
+    };
+
+    let url = "http://localhost:3000/recurso";
+    let metodo = "POST";
+
+    if (id_recurso) {
+        url = `http://localhost:3000/recurso/${id_recurso}`;
+        metodo = "PUT";
+    }
+
+    fetch(url, {
+        method: metodo,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            mensaje.innerText = data.error;
+            mensaje.className = "mensaje error";
+            return;
         }
-    </script>
+
+        mensaje.innerText = data.mensaje;
+        mensaje.className = "mensaje exito";
+
+        limpiarFormulario();
+        cargarRecursosAdmin();
+    })
+    .catch(error => {
+        console.error(error);
+        mensaje.innerText = "Error al guardar recurso.";
+        mensaje.className = "mensaje error";
+    });
+}
+
+function editarRecurso(id, nombre, descripcion, id_categoria) {
+    document.getElementById("tituloFormulario").innerText = "Editar recurso";
+    document.getElementById("id_recurso").value = id;
+    document.getElementById("nombre").value = nombre;
+    document.getElementById("descripcion").value = descripcion;
+    document.getElementById("id_categoria").value = id_categoria;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+function devolverRecurso(id) {
+    const confirmar = confirm("¿Confirma la devolución de este recurso?");
+
+    if (!confirmar) {
+        return;
+    }
+
+    fetch(`http://localhost:3000/recurso/${id}/devolver`, {
+        method: "PUT"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.mensaje || data.error);
+        cargarRecursosAdmin();
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Error al devolver recurso.");
+    });
+}
+
+function eliminarRecurso(id) {
+    const confirmar = confirm("¿Está seguro de eliminar este recurso?");
+
+    if (!confirmar) {
+        return;
+    }
+
+    fetch(`http://localhost:3000/recurso/${id}`, {
+        method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.mensaje || data.error);
+        cargarRecursosAdmin();
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Error al eliminar recurso.");
+    });
+}
+
+function limpiarFormulario() {
+    document.getElementById("tituloFormulario").innerText = "Agregar recurso";
+    document.getElementById("id_recurso").value = "";
+    document.getElementById("nombre").value = "";
+    document.getElementById("descripcion").value = "";
+    document.getElementById("id_categoria").value = "1";
+}
+</script>
 
 </body>
 </html>
