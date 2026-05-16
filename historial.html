@@ -4,405 +4,60 @@
     <meta charset="UTF-8">
     <title>Historial de Solicitudes</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="auth.js"></script>
 </head>
+<body>
 
-<body onload="validarSesion(); cargarSolicitudes();">
+<h1>Historial de Solicitudes</h1>
 
-<header class="topbar">
-    <div>
-        <h1>Gestión Audiovisual</h1>
-        <p>Historial de préstamos solicitados</p>
-    </div>
+<nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="recursos.html">Recursos</a>
+    <a href="solicitud.html">Crear solicitud</a>
+    <a href="index.html">Cerrar sesión</a>
+</nav>
 
-    <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="recursos.html">Recursos</a>
-        <a href="solicitud.html">Nueva solicitud</a>
-        <a href="historial.html">Historial</a>
-        <a href="admin.html">Admin</a>
-        <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
-    </nav>
-</header>
+<button onclick="cargarSolicitudes()">Cargar historial</button>
 
-<main class="container">
-
-    <div class="page-header">
-        <div>
-            <h2 id="tituloHistorial">Historial de solicitudes</h2>
-            <p id="subtituloHistorial">
-                Listado de solicitudes registradas en el sistema
-            </p>
-        </div>
-
-        <button class="btn-primary" onclick="cargarSolicitudes()">
-            Actualizar historial
-        </button>
-    </div>
-
-    <div class="table-container">
-        <table class="modern-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Recurso</th>
-                    <th>Fecha inicio</th>
-                    <th>Fecha fin</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-
-            <tbody id="tablaSolicitudes"></tbody>
-        </table>
-    </div>
-
-</main>
-
-<!-- MODAL -->
-<div id="modalOverlay" class="modal-overlay">
-    <div class="modal-card">
-        <div id="modalIcon" class="modal-icon">⚠️</div>
-        <h3 id="modalTitulo">Confirmar acción</h3>
-        <p id="modalMensaje">¿Desea continuar?</p>
-
-        <div class="modal-actions">
-            <button class="btn-secondary-modal" onclick="cerrarModal()">
-                Cancelar
-            </button>
-
-            <button id="modalConfirmar" class="btn-primary-modal">
-                Confirmar
-            </button>
-        </div>
-    </div>
-</div>
+<table border="1" cellpadding="8">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Recurso</th>
+            <th>Fecha inicio</th>
+            <th>Fecha fin</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody id="tablaSolicitudes"></tbody>
+</table>
 
 <script>
-
-let accionPendiente = null;
-
-function formatearFecha(fecha) {
-    if (!fecha) return "";
-    return new Date(fecha).toLocaleDateString("es-CL");
-}
-
-function obtenerEstadoSolicitud(idEstado) {
-
-    if (idEstado == 1) {
-        return '<span class="estado pendiente">Pendiente</span>';
-    }
-
-    if (idEstado == 2) {
-        return '<span class="estado disponible">Aprobada</span>';
-    }
-
-    if (idEstado == 3) {
-        return '<span class="estado prestado">Rechazada</span>';
-    }
-
-    if (idEstado == 4) {
-        return '<span class="estado devuelta">Devuelta</span>';
-    }
-
-    return '<span class="estado prestado">Sin estado</span>';
-}
-
 function cargarSolicitudes() {
-
-    const usuario = JSON.parse(localStorage.getItem("usuario"));
-    const esAdmin = usuario && usuario.id_rol == 1;
-
-    // CAMBIAR TITULOS SEGÚN ROL
-    if (esAdmin) {
-
-        document.getElementById("tituloHistorial").innerText =
-            "Historial general de solicitudes";
-
-        document.getElementById("subtituloHistorial").innerText =
-            "Visualización completa de solicitudes del sistema";
-
-    } else {
-
-        document.getElementById("tituloHistorial").innerText =
-            "Mi historial de solicitudes";
-
-        document.getElementById("subtituloHistorial").innerText =
-            "Visualización de sus solicitudes registradas";
-    }
-
-    fetch("http://localhost:3000/solicitudes")
+    fetch("/solicitudes")
         .then(res => res.json())
-
         .then(data => {
-
             const tabla = document.getElementById("tablaSolicitudes");
-
             tabla.innerHTML = "";
 
-            // FILTRAR SI ES USUARIO NORMAL
-            if (!esAdmin) {
-
-                data = data.filter(solicitud =>
-                    solicitud.id_usuario == usuario.id_usuario
-                );
-            }
-
-            if (data.length === 0) {
-
-                tabla.innerHTML = `
-                    <tr>
-                        <td colspan="7" style="text-align:center;">
-                            No existen solicitudes registradas
-                        </td>
-                    </tr>
-                `;
-
-                return;
-            }
-
-            data.forEach(solicitud => {
-
-               let acciones = "-";
-
-// ADMINISTRADOR
-if (esAdmin && solicitud.id_estado_solicitud == 1) {
-
-    acciones = `
-        <button class="btn-small"
-            onclick="confirmarAprobacion(${solicitud.id_solicitud})">
-
-            Aprobar
-        </button>
-
-        <button class="btn-danger"
-            onclick="confirmarRechazo(${solicitud.id_solicitud})">
-
-            Rechazar
-        </button>
-    `;
-}
-
-// USUARIO NORMAL
-if (!esAdmin && solicitud.id_estado_solicitud == 2) {
-
-    acciones = `
-        <button class="btn-warning"
-            onclick="confirmarDevolucion(${solicitud.id_solicitud})">
-
-            Devolver
-        </button>
-    `;
-}
-
+            data.forEach(item => {
                 tabla.innerHTML += `
                     <tr>
-                        <td>${solicitud.id_solicitud}</td>
-
-                        <td>
-                            ${solicitud.nombre_usuario || solicitud.id_usuario}
-                        </td>
-
-                        <td>
-                            ${solicitud.nombre_recurso || "Sin recurso"}
-                        </td>
-
-                        <td>
-                            ${formatearFecha(solicitud.fecha_inicio)}
-                        </td>
-
-                        <td>
-                            ${formatearFecha(solicitud.fecha_fin)}
-                        </td>
-
-                        <td>
-                            ${obtenerEstadoSolicitud(solicitud.id_estado_solicitud)}
-                        </td>
-
-                        <td>
-                            ${acciones}
-                        </td>
+                        <td>${item.id_solicitud}</td>
+                        <td>${item.usuario || item.id_usuario}</td>
+                        <td>${item.recurso || item.id_recurso || ""}</td>
+                        <td>${item.fecha_inicio}</td>
+                        <td>${item.fecha_fin}</td>
+                        <td>${item.estado || item.id_estado_solicitud}</td>
                     </tr>
                 `;
             });
         })
-
         .catch(error => {
-
-            console.error("Error al cargar solicitudes:", error);
-
-            mostrarMensajeModal(
-                "Error",
-                "No se pudieron cargar las solicitudes.",
-                "❌"
-            );
+            console.error(error);
+            alert("Error al cargar historial");
         });
 }
-
-function abrirModal(titulo, mensaje, icono, callback) {
-
-    document.getElementById("modalTitulo").innerText = titulo;
-    document.getElementById("modalMensaje").innerText = mensaje;
-    document.getElementById("modalIcon").innerText = icono;
-
-    accionPendiente = callback;
-
-    document.getElementById("modalOverlay").style.display = "flex";
-}
-
-function cerrarModal() {
-
-    document.getElementById("modalOverlay").style.display = "none";
-
-    accionPendiente = null;
-}
-
-document.getElementById("modalConfirmar")
-.addEventListener("click", function() {
-
-    if (accionPendiente) {
-        accionPendiente();
-    }
-
-    cerrarModal();
-});
-
-function mostrarMensajeModal(titulo, mensaje, icono) {
-
-    abrirModal(titulo, mensaje, icono, function() {});
-}
-
-function confirmarAprobacion(idSolicitud) {
-
-    abrirModal(
-        "Aprobar solicitud",
-        "¿Está seguro de aprobar esta solicitud?",
-        "✅",
-
-        function() {
-            aprobarSolicitud(idSolicitud);
-        }
-    );
-}
-
-function confirmarRechazo(idSolicitud) {
-
-    abrirModal(
-        "Rechazar solicitud",
-        "¿Está seguro de rechazar esta solicitud?",
-        "❌",
-
-        function() {
-            rechazarSolicitud(idSolicitud);
-        }
-    );
-}
-function confirmarDevolucion(idSolicitud) {
-
-    abrirModal(
-        "Devolver recurso",
-        "¿Desea devolver este recurso?",
-        "📦",
-
-        function() {
-            devolverRecurso(idSolicitud);
-        }
-    );
-}
-
-function aprobarSolicitud(idSolicitud) {
-
-    fetch(`http://localhost:3000/solicitud/${idSolicitud}/aprobar`, {
-        method: "PUT"
-    })
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        mostrarMensajeModal(
-            "Resultado",
-            data.mensaje || data.error,
-            data.error ? "❌" : "✅"
-        );
-
-        cargarSolicitudes();
-    })
-
-    .catch(error => {
-
-        console.error(error);
-
-        mostrarMensajeModal(
-            "Error",
-            "Error al aprobar solicitud.",
-            "❌"
-        );
-    });
-}
-
-function rechazarSolicitud(idSolicitud) {
-
-    fetch(`http://localhost:3000/solicitud/${idSolicitud}/rechazar`, {
-        method: "PUT"
-    })
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        mostrarMensajeModal(
-            "Resultado",
-            data.mensaje || data.error,
-            data.error ? "❌" : "✅"
-        );
-
-        cargarSolicitudes();
-    })
-
-    .catch(error => {
-
-        console.error(error);
-
-        mostrarMensajeModal(
-            "Error",
-            "Error al rechazar solicitud.",
-            "❌"
-        );
-    });
-}
-function devolverRecurso(idSolicitud) {
-
-    fetch(`http://localhost:3000/solicitud/${idSolicitud}/devolver`, {
-        method: "PUT"
-    })
-
-    .then(res => res.json())
-
-    .then(data => {
-
-        mostrarMensajeModal(
-            "Resultado",
-            data.mensaje || data.error,
-            data.error ? "❌" : "✅"
-        );
-
-        cargarSolicitudes();
-    })
-
-    .catch(error => {
-
-        console.error(error);
-
-        mostrarMensajeModal(
-            "Error",
-            "Error al devolver recurso.",
-            "❌"
-        );
-    });
-}
-
 </script>
 
 </body>

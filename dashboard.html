@@ -2,202 +2,39 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard | Gestión Audiovisual</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="auth.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+<body>
 
-<body onload="validarAdmin(); cargarDashboard();">
+<h1>Dashboard</h1>
 
-<header class="topbar">
-    <div>
-        <h1>Gestión Audiovisual</h1>
-        <p>Dashboard inteligente del sistema</p>
-    </div>
+<nav>
+    <a href="admin.html">Administrador</a>
+    <a href="recursos.html">Recursos</a>
+    <a href="historial.html">Historial</a>
+    <a href="index.html">Cerrar sesión</a>
+</nav>
 
-    <nav>
-        <a href="dashboard.html">Dashboard</a>
-        <a href="recursos.html">Recursos</a>
-        <a href="solicitud.html">Solicitudes</a>
-        <a href="historial.html">Historial</a>
-        <a href="admin.html">Admin</a>
-        <a href="#" onclick="cerrarSesion()">Cerrar sesión</a>
-    </nav>
-</header>
+<h2>Resumen del sistema</h2>
 
-<main class="container">
+<button onclick="cargarDashboard()">Cargar dashboard</button>
 
-    <div class="page-header">
-        <div>
-            <h2>Panel de Control</h2>
-            <p>Resumen general de recursos y solicitudes</p>
-        </div>
-
-        <button class="btn-primary" onclick="cargarDashboard()">
-            Actualizar dashboard
-        </button>
-    </div>
-
-    <div id="alertaPendientes" class="alerta-dashboard" style="display:none;"></div>
-
-    <section class="dashboard-grid">
-
-        <div class="dashboard-card">
-            <div class="dashboard-icon">📦</div>
-            <h3>Total de recursos</h3>
-            <p id="totalRecursos">0</p>
-        </div>
-
-        <div class="dashboard-card">
-            <div class="dashboard-icon">✅</div>
-            <h3>Recursos disponibles</h3>
-            <p id="recursosDisponibles">0</p>
-        </div>
-
-        <div class="dashboard-card">
-            <div class="dashboard-icon">⏳</div>
-            <h3>No disponibles</h3>
-            <p id="recursosNoDisponibles">0</p>
-        </div>
-
-        <div class="dashboard-card">
-            <div class="dashboard-icon">📝</div>
-            <h3>Total solicitudes</h3>
-            <p id="totalSolicitudes">0</p>
-        </div>
-
-        <div class="dashboard-card">
-            <div class="dashboard-icon">🔔</div>
-            <h3>Solicitudes pendientes</h3>
-            <p id="solicitudesPendientes">0</p>
-        </div>
-
-    </section>
-
-    <section class="charts-grid">
-
-        <div class="chart-card">
-            <h3>Disponibilidad de recursos</h3>
-            <canvas id="graficoRecursos"></canvas>
-        </div>
-
-        <div class="chart-card">
-            <h3>Resumen de solicitudes</h3>
-            <canvas id="graficoSolicitudes"></canvas>
-        </div>
-
-    </section>
-
-</main>
+<div id="resultado"></div>
 
 <script>
-let graficoRecursos = null;
-let graficoSolicitudes = null;
-
 function cargarDashboard() {
-    fetch("http://localhost:3000/dashboard")
+    fetch("/recursos")
         .then(res => res.json())
         .then(data => {
-            const totalRecursos = data.total_recursos ?? 0;
-            const recursosDisponibles = data.recursos_disponibles ?? 0;
-            const recursosNoDisponibles = data.recursos_no_disponibles ?? 0;
-            const totalSolicitudes = data.total_solicitudes ?? 0;
-            const solicitudesPendientes = data.solicitudes_pendientes ?? 0;
-
-            document.getElementById("totalRecursos").innerText = totalRecursos;
-            document.getElementById("recursosDisponibles").innerText = recursosDisponibles;
-            document.getElementById("recursosNoDisponibles").innerText = recursosNoDisponibles;
-            document.getElementById("totalSolicitudes").innerText = totalSolicitudes;
-            document.getElementById("solicitudesPendientes").innerText = solicitudesPendientes;
-
-            mostrarAlertaPendientes(solicitudesPendientes);
-            crearGraficoRecursos(recursosDisponibles, recursosNoDisponibles);
-            crearGraficoSolicitudes(totalSolicitudes, solicitudesPendientes);
+            document.getElementById("resultado").innerHTML =
+                `<p>Total de recursos registrados: ${data.length}</p>`;
         })
         .catch(error => {
-            console.error("Error al cargar dashboard:", error);
-            alert("Error al cargar los datos del dashboard");
+            console.error(error);
+            document.getElementById("resultado").innerText =
+                "Error al cargar dashboard";
         });
-}
-
-function mostrarAlertaPendientes(cantidad) {
-    const alerta = document.getElementById("alertaPendientes");
-
-    if (cantidad > 0) {
-        alerta.style.display = "block";
-        alerta.innerHTML = `
-            🔔 Tiene <strong>${cantidad}</strong> solicitud(es) pendiente(s) por revisar.
-            <a href="historial.html">Ir al historial</a>
-        `;
-    } else {
-        alerta.style.display = "none";
-    }
-}
-
-function crearGraficoRecursos(disponibles, noDisponibles) {
-    const ctx = document.getElementById("graficoRecursos");
-
-    if (graficoRecursos) {
-        graficoRecursos.destroy();
-    }
-
-    graficoRecursos = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-            labels: ["Disponibles", "No disponibles"],
-            datasets: [{
-                data: [disponibles, noDisponibles],
-                backgroundColor: ["#16a34a", "#dc2626"],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: "bottom"
-                }
-            }
-        }
-    });
-}
-
-function crearGraficoSolicitudes(total, pendientes) {
-    const ctx = document.getElementById("graficoSolicitudes");
-
-    if (graficoSolicitudes) {
-        graficoSolicitudes.destroy();
-    }
-
-    graficoSolicitudes = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: ["Total", "Pendientes"],
-            datasets: [{
-                label: "Solicitudes",
-                data: [total, pendientes],
-                backgroundColor: ["#1f3c88", "#f59e0b"],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
 }
 </script>
 
