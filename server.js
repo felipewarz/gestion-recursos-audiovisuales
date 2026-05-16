@@ -11,6 +11,7 @@ app.use(express.static(__dirname));
 
 console.log('Base de datos usada:', process.env.MYSQLDATABASE);
 
+// CONEXIÓN MYSQL
 const db = mysql.createConnection({
     host: process.env.MYSQLHOST,
     user: process.env.MYSQLUSER,
@@ -28,10 +29,55 @@ db.connect((err) => {
     console.log('Conectado a MySQL');
 });
 
+// RUTA PRINCIPAL
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// LOGIN
+app.post('/login', (req, res) => {
+
+    const { correo, contrasena } = req.body;
+
+    const sql = `
+        SELECT 
+            u.id_usuario,
+            u.nombre,
+            u.correo,
+            r.nombre AS rol
+        FROM usuarios u
+        INNER JOIN roles r 
+            ON u.id_rol = r.id_rol
+        WHERE u.correo = ? 
+        AND u.contrasena = ?
+    `;
+
+    db.query(sql, [correo, contrasena], (err, results) => {
+
+        if (err) {
+
+            console.error('Error en login:', err);
+
+            return res.status(500).json({
+                mensaje: 'Error al conectar con el servidor'
+            });
+        }
+
+        if (results.length === 0) {
+
+            return res.status(401).json({
+                mensaje: 'Credenciales incorrectas'
+            });
+        }
+
+        res.json({
+            mensaje: 'Inicio de sesión correcto',
+            usuario: results[0]
+        });
+    });
+});
+
+// OBTENER RECURSOS
 app.get('/recursos', (req, res) => {
 
     const sql = `
@@ -48,6 +94,7 @@ app.get('/recursos', (req, res) => {
     db.query(sql, (err, results) => {
 
         if (err) {
+
             console.error('Error al obtener recursos:', err);
 
             return res.status(500).json({
@@ -59,6 +106,7 @@ app.get('/recursos', (req, res) => {
     });
 });
 
+// CREAR SOLICITUD
 app.post('/solicitudes', (req, res) => {
 
     const {
@@ -91,6 +139,7 @@ app.post('/solicitudes', (req, res) => {
         (err, result) => {
 
             if (err) {
+
                 console.error('Error al crear solicitud:', err);
 
                 return res.status(500).json({
