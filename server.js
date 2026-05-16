@@ -6,6 +6,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+console.log('Base de datos usada:', process.env.MYSQLDATABASE);
 
 const db = mysql.createConnection({
     host: process.env.MYSQLHOST,
