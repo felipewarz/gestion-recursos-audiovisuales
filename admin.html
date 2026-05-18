@@ -121,7 +121,7 @@ function obtenerEstado(idEstado) {
 }
 
 function cargarRecursosAdmin() {
-    fetch("http://localhost:3000/recursos")
+    fetch("/recursos")
         .then(res => res.json())
         .then(data => {
             const tabla = document.getElementById("tablaAdmin");
@@ -200,11 +200,11 @@ function guardarRecurso() {
         id_categoria
     };
 
-    let url = "http://localhost:3000/recurso";
+    let url = "/recurso";
     let metodo = "POST";
 
     if (id_recurso) {
-        url = `http://localhost:3000/recurso/${id_recurso}`;
+      url = `/recurso/${id_recurso}`;
         metodo = "PUT";
     }
 
@@ -256,7 +256,7 @@ function devolverRecurso(id) {
         return;
     }
 
-    fetch(`http://localhost:3000/recurso/${id}/devolver`, {
+    fetch(`/recurso/${id}/devolver`, {
         method: "PUT"
     })
     .then(res => res.json())
@@ -277,7 +277,7 @@ function eliminarRecurso(id) {
         return;
     }
 
-    fetch(`http://localhost:3000/recurso/${id}`, {
+   fetch(`/recurso/${id}`, {
         method: "DELETE"
     })
     .then(res => res.json())

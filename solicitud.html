@@ -99,7 +99,7 @@ async function cargarDatosIniciales() {
     // BUSCAR NOMBRE DEL RECURSO
     try {
 
-        const respuesta = await fetch("http://localhost:3000/recursos");
+        const respuesta = await fetch("/recursos");
         const recursos = await respuesta.json();
 
         const recurso = recursos.find(r => r.id_recurso == idRecurso);
@@ -128,7 +128,7 @@ function crearSolicitud() {
         return;
     }
 
-    fetch("http://localhost:3000/solicitud", {
+   fetch("/solicitud", {
 
         method: "POST",
 

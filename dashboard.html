@@ -96,7 +96,7 @@ let graficoRecursos = null;
 let graficoSolicitudes = null;
 
 function cargarDashboard() {
-    fetch("http://localhost:3000/dashboard")
+    fetch("/dashboard")
         .then(res => res.json())
         .then(data => {
             const totalRecursos = data.total_recursos ?? 0;

@@ -132,7 +132,7 @@ function cargarSolicitudes() {
             "Visualización de sus solicitudes registradas";
     }
 
-    fetch("http://localhost:3000/solicitudes")
+    fetch("/solicitudes")
         .then(res => res.json())
 
         .then(data => {
@@ -313,7 +313,7 @@ function confirmarDevolucion(idSolicitud) {
 
 function aprobarSolicitud(idSolicitud) {
 
-    fetch(`http://localhost:3000/solicitud/${idSolicitud}/aprobar`, {
+    fetch(`/solicitud/${idSolicitud}/aprobar`, {
         method: "PUT"
     })
 
@@ -344,7 +344,7 @@ function aprobarSolicitud(idSolicitud) {
 
 function rechazarSolicitud(idSolicitud) {
 
-    fetch(`http://localhost:3000/solicitud/${idSolicitud}/rechazar`, {
+    fetch(`/solicitud/${idSolicitud}/rechazar`, {
         method: "PUT"
     })
 
@@ -374,7 +374,7 @@ function rechazarSolicitud(idSolicitud) {
 }
 function devolverRecurso(idSolicitud) {
 
-    fetch(`http://localhost:3000/solicitud/${idSolicitud}/devolver`, {
+    fetch(`/solicitud/${idSolicitud}/devolver`, {
         method: "PUT"
     })
 

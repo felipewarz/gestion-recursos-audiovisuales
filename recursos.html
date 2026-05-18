@@ -112,7 +112,7 @@ function cargarNotificacionesUsuario() {
         return;
     }
 
-    fetch("http://localhost:3000/solicitudes")
+    fetch("/solicitudes")
         .then(res => res.json())
         .then(data => {
             const solicitudesUsuario = data.filter(solicitud => 
@@ -155,7 +155,7 @@ function cargarNotificacionesUsuario() {
 }
 
 function cargarRecursos() {
-    fetch("http://localhost:3000/recursos")
+    fetch("/recursos")
         .then(res => res.json())
         .then(data => {
             recursosGlobales = data;
