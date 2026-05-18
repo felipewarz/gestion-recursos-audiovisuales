@@ -8,10 +8,11 @@ app.use(cors());
 app.use(express.json());
 
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'Admin123!',
-    database: 'gestion_recursos_audiovisuales'
+    host: process.env.MYSQLHOST || 'localhost',
+    user: process.env.MYSQLUSER || 'root',
+    password: process.env.MYSQLPASSWORD || 'Admin123!',
+    database: process.env.MYSQLDATABASE || 'gestion_recursos_audiovisuales',
+    port: process.env.MYSQLPORT || 3306
 });
 
 db.connect((err) => {
