@@ -37,27 +37,35 @@ app.post('/login', (req, res) => {
     const { correo, contrasena } = req.body;
 
     const sql = `
-        SELECT *
+        SELECT 
+            id_usuario,
+            nombre,
+            correo,
+            contrasena,
+            id_rol
         FROM usuarios
-        WHERE correo = ? AND contrasena = ?
+        WHERE correo = ?
+        AND contrasena = ?
     `;
 
-    db.query(sql, [correo, contrasena], (err, resultados) => {
+    db.query(sql, [correo, contrasena], (err, results) => {
         if (err) {
             console.error('Error en login:', err);
-            return res.status(500).json({ error: 'Error en el servidor' });
+            return res.status(500).json({
+                mensaje: 'Error al conectar con el servidor'
+            });
         }
 
-        if (resultados.length > 0) {
-            res.json({
-                mensaje: 'Login exitoso',
-                usuario: resultados[0]
-            });
-        } else {
-            res.json({
-                mensaje: 'Correo o contraseña incorrectos'
+        if (results.length === 0) {
+            return res.status(401).json({
+                mensaje: 'Credenciales incorrectas'
             });
         }
+
+        res.json({
+            mensaje: 'Inicio de sesión correcto',
+            usuario: results[0]
+        });
     });
 });
 
