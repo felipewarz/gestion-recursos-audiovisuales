@@ -255,6 +255,23 @@ app.post('/solicitud', (req, res) => {
                 error: 'El recurso no se encuentra disponible'
             });
         }
+        const inicio = new Date(fecha_inicio);
+const fin = new Date(fecha_fin);
+
+if (fin < inicio) {
+    return res.status(400).json({
+        error: 'La fecha de término no puede ser anterior a la fecha de inicio.'
+    });
+}
+
+const diferenciaMs = fin - inicio;
+const diferenciaDias = diferenciaMs / (1000 * 60 * 60 * 24);
+
+if (diferenciaDias > 3) {
+    return res.status(400).json({
+        error: 'El préstamo no puede superar un máximo de 3 días.'
+    });
+}
 
         const sqlSolicitud = `
             INSERT INTO solicitudes_prestamo

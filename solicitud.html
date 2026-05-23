@@ -127,7 +127,23 @@ function crearSolicitud() {
         mensaje.className = "mensaje error";
         return;
     }
+const inicio = new Date(fecha_inicio);
+const fin = new Date(fecha_fin);
 
+if (fin < inicio) {
+    mensaje.innerText = "La fecha de término no puede ser anterior a la fecha de inicio.";
+    mensaje.className = "mensaje error";
+    return;
+}
+
+const diferenciaMs = fin - inicio;
+const diferenciaDias = diferenciaMs / (1000 * 60 * 60 * 24);
+
+if (diferenciaDias > 3) {
+    mensaje.innerText = "El préstamo no puede superar un máximo de 3 días.";
+    mensaje.className = "mensaje error";
+    return;
+}
    fetch("/solicitud", {
 
         method: "POST",
