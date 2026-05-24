@@ -495,214 +495,125 @@ app.post('/registro', (req, res) => {
         });
     });
 });
-// ASISTENTE INTELIGENTE
+// ASISTENTE INTELIGENTE POR TIPO DE ACTIVIDAD
 app.post('/bot', (req, res) => {
     const { pregunta } = req.body;
     const texto = pregunta.toLowerCase();
 
-    // 1. Recomendación inteligente
+    let tipoActividad = '';
+    let palabrasClave = [];
+
     if (
-        texto.includes('recomiendas') ||
-        texto.includes('recomendar') ||
-        texto.includes('recomendacion') ||
-        texto.includes('recomendación') ||
-        texto.includes('mejor recurso') ||
-        texto.includes('sugerir') ||
-        texto.includes('sugieres')
+        texto.includes('foto') ||
+        texto.includes('fotografia') ||
+        texto.includes('fotografía') ||
+        texto.includes('sesion de fotos') ||
+        texto.includes('sesión de fotos') ||
+        texto.includes('book') ||
+        texto.includes('estudio')
     ) {
-        const sql = `
-            SELECT 
-                r.nombre,
-                r.descripcion,
-                c.nombre AS categoria,
-                e.nombre AS estado,
-                COUNT(sp.id_recurso) AS veces_solicitado
-            FROM recursos_audiovisuales r
-            INNER JOIN categorias_recurso c 
-                ON r.id_categoria = c.id_categoria
-            INNER JOIN estados_recurso e 
-                ON r.id_estado = e.id_estado
-            LEFT JOIN solicitudes_prestamo sp 
-                ON r.id_recurso = sp.id_recurso
-            WHERE e.nombre = 'Disponible'
-            GROUP BY r.id_recurso, r.nombre, r.descripcion, c.nombre, e.nombre
-            ORDER BY veces_solicitado DESC, r.nombre ASC
-            LIMIT 1
-        `;
+        tipoActividad = 'sesión de fotos profesional';
+        palabrasClave = ['camara', 'cámara', 'foco', 'iluminacion', 'iluminación', 'televisor', 'notebook'];
 
-        db.query(sql, (err, results) => {
-            if (err || results.length === 0) {
-                return res.json({
-                    respuesta: 'No pude generar una recomendación en este momento. Revisa si existen recursos disponibles registrados.'
-                });
-            }
-
-            const recurso = results[0];
-
-            return res.json({
-                respuesta:
-                    `Te recomiendo solicitar "${recurso.nombre}".\n\n` +
-                    `Motivo: pertenece a la categoría ${recurso.categoria}, se encuentra disponible y registra ${recurso.veces_solicitado} solicitudes previas en el sistema.\n\n` +
-                    `Descripción: ${recurso.descripcion}`
-            });
-        });
-
-    // 2. Recursos disponibles
-    } else if (
-        texto.includes('disponible') ||
-        texto.includes('disponibles') ||
-        texto.includes('que recursos hay') ||
-        texto.includes('qué recursos hay') ||
-        texto.includes('recursos disponibles')
-    ) {
-        const sql = `
-            SELECT 
-                r.nombre,
-                r.descripcion,
-                c.nombre AS categoria
-            FROM recursos_audiovisuales r
-            INNER JOIN estados_recurso e 
-                ON r.id_estado = e.id_estado
-            INNER JOIN categorias_recurso c
-                ON r.id_categoria = c.id_categoria
-            WHERE e.nombre = 'Disponible'
-            ORDER BY c.nombre, r.nombre
-        `;
-
-        db.query(sql, (err, results) => {
-            if (err) {
-                return res.json({
-                    respuesta: 'No pude consultar los recursos disponibles en este momento.'
-                });
-            }
-
-            if (results.length === 0) {
-                return res.json({
-                    respuesta: 'Actualmente no hay recursos disponibles para préstamo.'
-                });
-            }
-
-            const lista = results
-                .map(r => `• ${r.nombre} (${r.categoria}): ${r.descripcion}`)
-                .join('\n');
-
-            return res.json({
-                respuesta: `Actualmente estos recursos se encuentran disponibles:\n${lista}`
-            });
-        });
-
-    // 3. Recursos de audio
-    } else if (
-        texto.includes('audio') ||
-        texto.includes('microfono') ||
-        texto.includes('micrófono') ||
-        texto.includes('parlante')
-    ) {
-        const sql = `
-            SELECT 
-                r.nombre,
-                r.descripcion,
-                e.nombre AS estado
-            FROM recursos_audiovisuales r
-            INNER JOIN categorias_recurso c 
-                ON r.id_categoria = c.id_categoria
-            INNER JOIN estados_recurso e 
-                ON r.id_estado = e.id_estado
-            WHERE c.nombre LIKE '%Audio%'
-            ORDER BY r.nombre
-        `;
-
-        db.query(sql, (err, results) => {
-            if (err) {
-                return res.json({
-                    respuesta: 'No pude consultar los recursos de audio.'
-                });
-            }
-
-            if (results.length === 0) {
-                return res.json({
-                    respuesta: 'No hay recursos de audio registrados actualmente.'
-                });
-            }
-
-            const lista = results
-                .map(r => `• ${r.nombre}: ${r.descripcion}. Estado: ${r.estado}`)
-                .join('\n');
-
-            return res.json({
-                respuesta: `Estos son los recursos de audio registrados:\n${lista}`
-            });
-        });
-
-    // 4. Regla de préstamo máximo
-    } else if (
-        texto.includes('3 dias') ||
-        texto.includes('3 días') ||
-        texto.includes('maximo') ||
-        texto.includes('máximo') ||
-        texto.includes('cuantos dias') ||
-        texto.includes('cuántos días')
-    ) {
-        return res.json({
-            respuesta:
-                'El sistema permite solicitar un recurso por un máximo de 3 días. ' +
-                'Además, la fecha de término no puede ser anterior a la fecha de inicio.'
-        });
-
-    // 5. Consulta por clase, reunión o presentación
     } else if (
         texto.includes('clase') ||
         texto.includes('presentacion') ||
         texto.includes('presentación') ||
-        texto.includes('reunion') ||
-        texto.includes('reunión')
+        texto.includes('exposicion') ||
+        texto.includes('exposición') ||
+        texto.includes('charla')
     ) {
-        const sql = `
-            SELECT 
-                r.nombre,
-                r.descripcion,
-                c.nombre AS categoria
-            FROM recursos_audiovisuales r
-            INNER JOIN categorias_recurso c 
-                ON r.id_categoria = c.id_categoria
-            INNER JOIN estados_recurso e 
-                ON r.id_estado = e.id_estado
-            WHERE e.nombre = 'Disponible'
-            AND (
-                c.nombre LIKE '%Proyección%'
-                OR c.nombre LIKE '%Computación%'
-                OR r.nombre LIKE '%Proyector%'
-                OR r.nombre LIKE '%Notebook%'
-                OR r.nombre LIKE '%Televisor%'
-            )
-            ORDER BY r.nombre
-            LIMIT 3
-        `;
+        tipoActividad = 'clase, charla o presentación';
+        palabrasClave = ['proyector', 'notebook', 'microfono', 'micrófono', 'parlante', 'televisor'];
 
-        db.query(sql, (err, results) => {
-            if (err || results.length === 0) {
-                return res.json({
-                    respuesta: 'No encontré recursos disponibles específicos para una clase o presentación.'
-                });
-            }
+    } else if (
+        texto.includes('grabacion') ||
+        texto.includes('grabación') ||
+        texto.includes('video') ||
+        texto.includes('entrevista') ||
+        texto.includes('streaming')
+    ) {
+        tipoActividad = 'grabación de video o entrevista';
+        palabrasClave = ['camara', 'cámara', 'microfono', 'micrófono', 'foco', 'iluminacion', 'iluminación', 'notebook'];
 
-            const lista = results
-                .map(r => `• ${r.nombre} (${r.categoria}): ${r.descripcion}`)
-                .join('\n');
+    } else if (
+        texto.includes('reunion') ||
+        texto.includes('reunión') ||
+        texto.includes('videollamada') ||
+        texto.includes('conferencia')
+    ) {
+        tipoActividad = 'reunión o videoconferencia';
+        palabrasClave = ['notebook', 'microfono', 'micrófono', 'parlante', 'televisor'];
 
-            return res.json({
-                respuesta:
-                    `Para una clase, reunión o presentación, te sugiero revisar estos recursos disponibles:\n${lista}`
-            });
-        });
+    } else if (
+        texto.includes('audio') ||
+        texto.includes('sonido') ||
+        texto.includes('musica') ||
+        texto.includes('música')
+    ) {
+        tipoActividad = 'actividad de audio o sonido';
+        palabrasClave = ['microfono', 'micrófono', 'parlante'];
 
-    // 6. Respuesta general
     } else {
         return res.json({
             respuesta:
-                'Soy el asistente inteligente de recursos audiovisuales. Puedo ayudarte a consultar disponibilidad, sugerir recursos para clases o presentaciones, revisar recursos de audio y explicar las reglas de préstamo.'
+                'Puedo recomendar recursos según el tipo de actividad. Por ejemplo, puedes escribir: "Necesito hacer una sesión de fotos profesional", "Necesito grabar una entrevista", "Haré una presentación" o "Necesito una videoconferencia".'
         });
     }
+
+    const condiciones = palabrasClave
+        .map(() => `(LOWER(r.nombre) LIKE ? OR LOWER(r.descripcion) LIKE ?)`)
+        .join(' OR ');
+
+    const parametros = [];
+
+    palabrasClave.forEach(palabra => {
+        parametros.push(`%${palabra}%`);
+        parametros.push(`%${palabra}%`);
+    });
+
+    const sql = `
+        SELECT 
+            r.id_recurso,
+            r.nombre,
+            r.descripcion,
+            c.nombre AS categoria,
+            e.nombre AS estado
+        FROM recursos_audiovisuales r
+        INNER JOIN categorias_recurso c 
+            ON r.id_categoria = c.id_categoria
+        INNER JOIN estados_recurso e 
+            ON r.id_estado = e.id_estado
+        WHERE e.nombre = 'Disponible'
+        AND (${condiciones})
+        ORDER BY c.nombre, r.nombre
+    `;
+
+    db.query(sql, parametros, (err, results) => {
+        if (err) {
+            console.error('Error en asistente:', err);
+            return res.json({
+                respuesta: 'No pude generar una recomendación en este momento.'
+            });
+        }
+
+        if (results.length === 0) {
+            return res.json({
+                respuesta:
+                    `Para una ${tipoActividad}, no encontré recursos disponibles asociados en este momento.`
+            });
+        }
+
+        const lista = results
+            .map(r => `• ${r.nombre} (${r.categoria}): ${r.descripcion}`)
+            .join('\n');
+
+        return res.json({
+            respuesta:
+                `Para una ${tipoActividad}, te recomiendo solicitar los siguientes recursos:\n\n${lista}\n\n` +
+                `Esta recomendación se genera según el tipo de actividad indicada, la categoría de los recursos y su disponibilidad actual.`
+        });
+    });
 });
 const PORT = process.env.PORT || 3000;
 
