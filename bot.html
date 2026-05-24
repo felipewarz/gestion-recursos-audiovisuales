@@ -42,17 +42,34 @@
 
     <section class="card">
         <h3>Ejemplos de consultas</h3>
-<ul>
-    <li>Necesito hacer una sesión de fotos profesional.</li>
-    <li>Necesito grabar una entrevista.</li>
-    <li>Haré una presentación para 30 personas.</li>
-    <li>Necesito realizar una videoconferencia.</li>
-    <li>Necesito apoyo de sonido para una actividad.</li>
-</ul>
+
+<button onclick="preguntaRapida('Necesito hacer una sesión de fotos profesional.')">
+    Sesión de fotos profesional
+</button>
+
+<button onclick="preguntaRapida('Necesito grabar una entrevista.')">
+    Grabar una entrevista
+</button>
+
+<button onclick="preguntaRapida('Haré una presentación para 30 personas.')">
+    Presentación para 30 personas
+</button>
+
+<button onclick="preguntaRapida('Necesito realizar una videoconferencia.')">
+    Videoconferencia
+</button>
+
+<button onclick="preguntaRapida('Necesito apoyo de sonido para una actividad.')">
+    Apoyo de sonido
+</button>
     </section>
 </main>
 
 <script>
+    function preguntaRapida(texto) {
+    document.getElementById("pregunta").value = texto;
+    consultarBot();
+}
 function consultarBot() {
     const pregunta = document.getElementById("pregunta").value;
     const respuesta = document.getElementById("respuesta");
