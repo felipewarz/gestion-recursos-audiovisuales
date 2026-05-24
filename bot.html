@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Asistente Inteligente</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+    <h1>Asistente Inteligente</h1>
+    <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="recursos.html">Recursos</a>
+        <a href="solicitud.html">Solicitudes</a>
+        <a href="historial.html">Historial</a>
+        <a href="index.html">Cerrar sesión</a>
+    </nav>
+</header>
+
+<main class="container">
+    <section class="card">
+        <h2>Consulta al asistente</h2>
+        <p>
+            Este asistente permite consultar información sobre recursos audiovisuales,
+            disponibilidad, recomendaciones y reglas de préstamo.
+        </p>
+
+        <input 
+            type="text" 
+            id="pregunta" 
+            placeholder="Ejemplo: ¿Qué recursos están disponibles?"
+            style="width: 100%; padding: 10px;"
+        >
+
+        <br><br>
+
+        <button onclick="consultarBot()">Preguntar</button>
+
+        <div id="respuesta" style="margin-top: 20px; white-space: pre-line;"></div>
+    </section>
+
+    <section class="card">
+        <h3>Preguntas sugeridas</h3>
+        <ul>
+            <li>¿Qué recursos están disponibles?</li>
+            <li>¿Qué recurso recomiendas?</li>
+            <li>¿Qué recursos de audio hay?</li>
+            <li>¿Cuál es el máximo de días para solicitar un recurso?</li>
+        </ul>
+    </section>
+</main>
+
+<script>
+function consultarBot() {
+    const pregunta = document.getElementById("pregunta").value;
+    const respuesta = document.getElementById("respuesta");
+
+    if (!pregunta) {
+        respuesta.innerText = "Debe ingresar una pregunta.";
+        return;
+    }
+
+    respuesta.innerText = "Consultando asistente...";
+
+    fetch("/bot", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ pregunta })
+    })
+    .then(res => res.json())
+    .then(data => {
+        respuesta.innerText = data.respuesta;
+    })
+    .catch(error => {
+        console.error(error);
+        respuesta.innerText = "Error al consultar el asistente.";
+    });
+}
+</script>
+
+</body>
+</html>
