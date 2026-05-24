@@ -495,6 +495,96 @@ app.post('/registro', (req, res) => {
         });
     });
 });
+// ASISTENTE INTELIGENTE
+app.post('/bot', (req, res) => {
+    const { pregunta } = req.body;
+    const texto = pregunta.toLowerCase();
+
+    if (texto.includes('disponible') || texto.includes('recursos')) {
+        const sql = `
+            SELECT 
+                r.nombre,
+                r.descripcion
+            FROM recursos_audiovisuales r
+            INNER JOIN estados_recurso e ON r.id_estado = e.id_estado
+            WHERE e.nombre = 'Disponible'
+        `;
+
+        db.query(sql, (err, results) => {
+            if (err) {
+                return res.json({ respuesta: 'No pude consultar los recursos disponibles.' });
+            }
+
+            if (results.length === 0) {
+                return res.json({ respuesta: 'No hay recursos disponibles en este momento.' });
+            }
+
+            const lista = results.map(r => `• ${r.nombre}: ${r.descripcion}`).join('\n');
+
+            res.json({
+                respuesta: `Los recursos disponibles actualmente son:\n${lista}`
+            });
+        });
+
+    } else if (texto.includes('mas usado') || texto.includes('más usado') || texto.includes('recomend')) {
+        const sql = `
+            SELECT 
+                r.nombre,
+                COUNT(ds.id_recurso) AS veces_usado
+            FROM recursos_audiovisuales r
+            LEFT JOIN detalle_solicitud ds ON r.id_recurso = ds.id_recurso
+            GROUP BY r.nombre
+            ORDER BY veces_usado DESC
+            LIMIT 1
+        `;
+
+        db.query(sql, (err, results) => {
+            if (err || results.length === 0) {
+                return res.json({ respuesta: 'No pude generar una recomendación en este momento.' });
+            }
+
+            res.json({
+                respuesta: `Según el historial de uso, el recurso más recomendado es "${results[0].nombre}", ya que registra ${results[0].veces_usado} usos.`
+            });
+        });
+
+    } else if (texto.includes('audio')) {
+        const sql = `
+            SELECT 
+                r.nombre,
+                r.descripcion
+            FROM recursos_audiovisuales r
+            INNER JOIN categorias_recurso c ON r.id_categoria = c.id_categoria
+            WHERE c.nombre LIKE '%Audio%'
+        `;
+
+        db.query(sql, (err, results) => {
+            if (err) {
+                return res.json({ respuesta: 'No pude consultar los recursos de audio.' });
+            }
+
+            if (results.length === 0) {
+                return res.json({ respuesta: 'No se encontraron recursos de audio registrados.' });
+            }
+
+            const lista = results.map(r => `• ${r.nombre}: ${r.descripcion}`).join('\n');
+
+            res.json({
+                respuesta: `Estos son los recursos de audio registrados:\n${lista}`
+            });
+        });
+
+    } else if (texto.includes('3 dias') || texto.includes('3 días') || texto.includes('maximo') || texto.includes('máximo')) {
+        res.json({
+            respuesta: 'El sistema permite solicitar recursos por un máximo de 3 días. Si la fecha de término supera ese plazo, la solicitud debe ser corregida.'
+        });
+
+    } else {
+        res.json({
+            respuesta: 'Soy el asistente de recursos audiovisuales. Puedes preguntarme por recursos disponibles, recursos de audio, recomendaciones o duración máxima del préstamo.'
+        });
+    }
+});
 
 const PORT = process.env.PORT || 3000;
 
