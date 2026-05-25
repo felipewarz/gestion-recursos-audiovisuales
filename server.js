@@ -553,6 +553,42 @@ app.post('/bot', (req, res) => {
     ) {
         tipoActividad = 'actividad de audio o sonido';
         palabrasClave = ['microfono', 'micrófono', 'parlante'];
+        } else if (
+    texto.includes('podcast') ||
+    texto.includes('voz')
+) {
+    tipoActividad = 'podcast o grabación de voz';
+    palabrasClave = ['microfono', 'micrófono', 'notebook', 'parlante'];
+
+    } else if (
+    texto.includes('streaming') ||
+    texto.includes('transmision') ||
+    texto.includes('transmisión')
+) {
+    tipoActividad = 'streaming o transmisión';
+    palabrasClave = ['camara', 'cámara', 'microfono', 'micrófono', 'capturadora', 'notebook'];
+
+    } else if (
+    texto.includes('evento') ||
+    texto.includes('ceremonia')
+) {
+    tipoActividad = 'evento o ceremonia';
+    palabrasClave = ['parlante', 'microfono', 'micrófono', 'foco', 'iluminacion'];
+
+    } else if (
+    texto.includes('redes sociales') ||
+    texto.includes('contenido')
+) {
+    tipoActividad = 'creación de contenido para redes sociales';
+    palabrasClave = ['camara', 'cámara', 'aro', 'foco', 'microfono', 'micrófono'];
+
+    } else if (
+    texto.includes('pelicula') ||
+    texto.includes('película') ||
+    texto.includes('cine')
+) {
+    tipoActividad = 'proyección audiovisual';
+    palabrasClave = ['proyector', 'pantalla', 'parlante'];
 
     } else {
         return res.json({
