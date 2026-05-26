@@ -9,22 +9,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
     host: process.env.MYSQLHOST || 'localhost',
     user: process.env.MYSQLUSER || 'root',
     password: process.env.MYSQLPASSWORD || 'Admin123!',
     database: process.env.MYSQLDATABASE || 'gestion_recursos_audiovisuales',
-    port: process.env.MYSQLPORT || 3306
+    port: process.env.MYSQLPORT || 3306,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error('Error al conectar a MySQL:', err);
-        return;
-    }
-
-    console.log('Conectado a MySQL');
-});
+console.log('Pool de conexiones MySQL iniciado');
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
